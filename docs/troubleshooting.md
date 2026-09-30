@@ -64,9 +64,9 @@ Windows Task View kısayolu `Win+Tab` direkt çalışmalı. Sanal masaüstü kı
 
 | LED Rengi | Profil |
 |-----------|--------|
-| Cyan (açık mavi) | F3 |
-| Mavi | F4 |
-| Kırmızı | F5 |
+| Turkuaz (cyan) | F3 |
+| Kırmızı | F4 |
+| Mavi | F5 |
 
 G8 butonuyla profil değiştirilir. Tüm profillere aynı atamayı yapmak önerilir.
 

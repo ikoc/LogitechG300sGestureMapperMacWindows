@@ -20,6 +20,24 @@ Script bağımlılıkları (`libusb`, `build-essential`, `git`, `ratslap`) otoma
 ./remap.sh reset      # Fabrika ayarlarına dön
 ```
 
+## Web Arayüzü (önerilen)
+
+```bash
+./g300s_web.py --open      # http://127.0.0.1:8300
+```
+
+Tarayıcıdan üç profili (Turkuaz=F3, Kırmızı=F4, Mavi=F5) okur ve düzenler: buton atamaları, DPI seviyeleri (tüm profillerde eşitleme), polling, LED rengi. macOS / Linux / Windows hazır ayarları vardır.
+
+- Mouse'a yazmadan önce değişiklik özeti gösterilir, her yazmadan önce `backups/` altına yedek alınır, yazılan değerler geri okunarak doğrulanır.
+- Sadece `127.0.0.1` dinler; yazma istekleri oturum token'ı ister.
+- **Canlı test**: "▶ Canlı test" ile mouse'a basınca haritada butonlar yanar (G4-G9 makroları, sol/sağ/orta tık, tekerlek, hareket). Mouse'un hangi modda (renk) olduğunu da gösterir. Makrolar test sırasında OS'a iletilmez (isteğe bağlı). G8 ve DPI tuşları bilgisayara olay göndermediği için görünmez. Test mouse'un gerçek ayarını (taslağı değil) esas alır.
+  - Gereksinim (bir kez): `/etc/udev/rules.d/99-g300s-input.rules` — `SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c246", GROUP="plugdev", MODE="0660"`
+- Sol/sağ/orta tık ve G8 (mod değiştirme) arayüzden değiştirilemez.
+- Tek başına modifier (ör. sadece `Super_L`) atanamaz; ratslap bunu `Super_L+Super_L` diye saklıyor.
+- Gereksinim: `bin/ratslap` (veya `/tmp/ratslap/ratslap`) ve udev kuralı — `./remap.sh show` ilk çalıştırmada kurar.
+
+Önerilen düzen: F3/turkuaz = macOS, F4/kırmızı = Linux, F5/mavi = Windows. Bilgisayar değiştirirken G8 ile ilgili renge geç.
+
 ## Buton Düzeni
 
 ```
