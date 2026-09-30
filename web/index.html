@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G300s Kontrol</title>
+<style>
+:root {
+  --bg: #f5f6f8; --card: #ffffff; --ink: #1c2230; --muted: #667085; --line: #dfe3ea;
+  --accent: #3563e9; --accent-ink: #ffffff; --danger: #d92d20; --ok: #12805c; --warn-bg: #fff4e0;
+  --c-cyan: #14b8d4; --c-red: #e5484d; --c-blue: #3b6ff5; --c-green: #2ea36b;
+  --c-yellow: #d9a406; --c-magenta: #c04fd6; --c-white: #b8bfcc; --c-black: #3a3f4a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151c; --card: #1b202b; --ink: #e8ebf2; --muted: #9aa3b5; --line: #2c3342;
+    --accent: #6f93ff; --accent-ink: #0d1220; --danger: #ff7b72; --ok: #4cc79a; --warn-bg: #33291a;
+    --c-cyan: #34d3ee; --c-red: #ff6b70; --c-blue: #6f93ff; --c-green: #4cc79a;
+    --c-yellow: #f0c23c; --c-magenta: #dc7cf0; --c-white: #d0d6e2; --c-black: #7b8394;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151c; --card: #1b202b; --ink: #e8ebf2; --muted: #9aa3b5; --line: #2c3342;
+  --accent: #6f93ff; --accent-ink: #0d1220; --danger: #ff7b72; --ok: #4cc79a; --warn-bg: #33291a;
+  --c-cyan: #34d3ee; --c-red: #ff6b70; --c-blue: #6f93ff; --c-green: #4cc79a;
+  --c-yellow: #f0c23c; --c-magenta: #dc7cf0; --c-white: #d0d6e2; --c-black: #7b8394;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding-bottom: 92px; }
+main { max-width: 1040px; margin: 0 auto; padding: 20px 16px; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.pill { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.bad { color: var(--danger); border-color: var(--danger); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.profiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.pcard { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 14px;
+  cursor: pointer; text-align: left; font: inherit; color: inherit; position: relative; }
+.pcard:hover { border-color: var(--muted); }
+.pcard[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.pcard .top { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.pcard .meta { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.pcard .role { font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); margin-left: auto; }
+.pcard .changed { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+.cols { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+select, input[type=text], input[type=number] { font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; min-width: 0; }
+select:focus, input:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: inherit; border-radius: 9px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink); padding: 8px 14px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.mouse { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+.mouse .body { fill: var(--bg); stroke: var(--line); stroke-width: 2; }
+.mouse .gbtn { cursor: pointer; }
+.mouse .gbtn circle { fill: var(--card); stroke: var(--muted); stroke-width: 2; }
+.mouse .gbtn.locked { cursor: default; }
+.mouse .gbtn.locked circle { fill: transparent; stroke: var(--line); }
+.mouse .gbtn.sel circle { stroke: var(--accent); stroke-width: 4; }
+.mouse .gbtn.chg circle { fill: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+.mouse text { fill: var(--ink); font-family: inherit; text-anchor: middle; pointer-events: none; }
+.mouse .id { font-size: 15px; font-weight: 700; }
+.mouse .act { font-size: 10.5px; fill: var(--muted); }
+.mouse .fixed { fill: var(--muted); font-size: 11px; }
+.mouse .zone { fill: transparent; transition: fill .08s; }
+.mouse .zone.on { fill: color-mix(in srgb, var(--accent) 45%, transparent); }
+.mouse .wheel { fill: var(--card); stroke: var(--muted); stroke-width: 2; }
+.mouse .wheel.on { fill: color-mix(in srgb, var(--accent) 55%, var(--card)); stroke: var(--accent); }
+.mouse .wheelarrow { fill: var(--accent); font-size: 16px; font-weight: 700; }
+.mouse .gbtn.live circle { fill: var(--accent); stroke: var(--accent); stroke-width: 4; }
+.mouse .gbtn.live .id { fill: var(--accent-ink); }
+.mouse .ring { fill: none; stroke: var(--line); stroke-width: 2; }
+.mouse .dotm { fill: var(--accent); }
+.live-box { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 13.5px; min-height: 44px; }
+.live-box b { color: var(--accent); }
+.live-box.warn { background: var(--warn-bg); }
+.evlog { margin: 8px 0 0; padding: 0; list-style: none; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; color: var(--muted); max-height: 110px; overflow: hidden; }
+.pcard .active { display: block; margin-top: 4px; font-size: 12px; color: var(--ok); }
+.rows { display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: 44px 1fr 150px; gap: 8px; align-items: center;
+  padding: 6px 8px; border-radius: 10px; border: 1px solid transparent; }
+.row.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.row.chg .gid::after { content: " •"; color: var(--danger); }
+.row .gid { font-weight: 700; }
+.row.locked { opacity: .6; }
+.row .keys { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+.dpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+.dpi-grid .lvl { display: flex; flex-direction: column; gap: 6px; }
+.dpi-grid .lvl label.def { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.check { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; font-size: 14px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); z-index: 5; }
+footer .in { max-width: 1040px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+footer .sp { flex: 1; min-width: 8px; }
+#msg { font-size: 13px; color: var(--muted); }
+#msg.err { color: var(--danger); }
+#msg.ok { color: var(--ok); }
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink); max-width: 560px; width: calc(100% - 32px); padding: 20px; }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog ul { padding-left: 18px; margin: 8px 0 16px; max-height: 300px; overflow: auto; font-size: 13.5px; }
+dialog .btns { display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 820px) {
+  .cols { grid-template-columns: 1fr; }
+  .profiles { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 40px 1fr; }
+  .row .keys { grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>G300s Kontrol</h1>
+    <span class="pill" id="conn">bağlanıyor…</span>
+    <span class="pill">ayarlar mouse flash'ına yazılır</span>
+  </header>
+
+  <div class="profiles" id="profiles"></div>
+
+  <div class="card">
+    <div class="toolbar">
+      <label class="f">Bu profil hangi bilgisayar için?
+        <select id="role"></select>
+      </label>
+      <label class="f">LED rengi
+        <select id="colour"></select>
+      </label>
+      <button id="loadPreset" title="Seçili işletim sisteminin hazır buton ayarını taslağa yükler (mouse'a yazmaz)">Hazır ayarı yükle</button>
+      <button id="selectMode" title="Mouse'u şu an bu profile geçirir (LED rengi değişir)">Mouse'u bu moda geçir</button>
+    </div>
+    <div class="cols">
+      <div>
+        <h2>Butonlar</h2>
+        <svg class="mouse" id="mouse" viewBox="0 0 320 380" role="img" aria-label="G300s buton şeması"></svg>
+        <div class="toolbar" style="margin-top:10px; justify-content:center">
+          <button id="liveBtn" type="button">▶ Canlı test</button>
+          <label class="check" style="margin:0"><input type="checkbox" id="grabKeys" checked> makroları OS'a iletme</label>
+        </div>
+        <div class="live-box" id="liveBox" aria-live="polite">Canlı testi başlat, sonra mouse butonlarına bas.</div>
+        <ul class="evlog" id="evlog"></ul>
+      </div>
+      <div>
+        <h2>Atamalar</h2>
+        <div class="rows" id="rows"></div>
+        <p class="hint">Sol/sağ/orta tık ve G8 (mod değiştirme) güvenlik için kilitli.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>DPI ve polling</h2>
+    <div class="cols" style="grid-template-columns: 1fr 1fr">
+      <div>
+        <svg class="chart" id="chart" viewBox="0 0 440 240" role="img" aria-label="Profil başına DPI seviyeleri"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div>
+        <div class="dpi-grid" id="dpiGrid"></div>
+        <div class="toolbar" style="margin-top:14px">
+          <label class="f">Polling
+            <select id="rate"></select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" id="syncDpi" checked> DPI seviyeleri tüm profillerde aynı olsun (polling profile özel)</label>
+        <p class="hint">Mouse şu an <b>varsayılan</b> seviyede çalışır. Buton atamasında DPI Up/Down/Cycle yoksa seviye değişmez.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="in">
+    <span id="msg">Hazır.</span>
+    <span class="sp"></span>
+    <select id="backupSel" aria-label="Yedekler"></select>
+    <button id="restore">Yedeği geri yükle</button>
+    <button id="reload">Mouse'tan yeniden oku</button>
+    <button id="discard" disabled>Vazgeç</button>
+    <button id="apply" class="primary" disabled>Mouse'a yaz</button>
+  </div>
+</footer>
+
+<dialog id="dlg">
+  <h2 style="margin-bottom:6px">Mouse'a yazılacak değişiklikler</h2>
+  <ul id="dlgList"></ul>
+  <div class="btns"><button id="dlgNo">İptal</button><button id="dlgYes" class="primary">Yaz</button></div>
+</dialog>
+
+<script>
+const TOKEN = "__TOKEN__";
+const PROFILES = ["F3", "F4", "F5"];
+const EDITABLE = ["g4", "g5", "g6", "g7", "g9"];
+const BUTTONS = ["left", "right", "middle", "g4", "g5", "g6", "g7", "g8", "g9"];
+const BTN_LABEL = { left: "Sol", right: "Sağ", middle: "Orta", g4: "G4", g5: "G5", g6: "G6", g7: "G7", g8: "G8", g9: "G9" };
+const COLOURS = { cyan: "Turkuaz", red: "Kırmızı", blue: "Mavi", green: "Yeşil", yellow: "Sarı", magenta: "Mor", white: "Beyaz", black: "Kapalı" };
+const RATES = [125, 250, 500, 1000];
+const DPIS = []; for (let d = 250; d <= 4000; d += 250) DPIS.push(d);
+
+// Eylem kataloğu: [etiket, tuşlar]
+const ACTIONS = {
+  macOS: [
+    ["Mission Control", "LeftCtrl+Up"], ["Uygulama Exposé", "LeftCtrl+Down"],
+    ["Sol masaüstü", "LeftCtrl+Left"], ["Sağ masaüstü", "LeftCtrl+Right"],
+    ["Sayfa geri (Cmd+[)", "Super_L+["], ["Sayfa ileri (Cmd+])", "Super_L+]"],
+    ["Spotlight", "Super_L+Space"], ["Tam ekran", "LeftCtrl+Super_L+F"],
+  ],
+  Linux: [
+    ["Uygulama ızgarası", "Super_L+A"],
+    ["Sol workspace", "LeftCtrl+LeftAlt+Left"], ["Sağ workspace", "LeftCtrl+LeftAlt+Right"],
+    ["Masaüstünü göster", "Super_L+D"], ["Sayfa geri (Alt+←)", "LeftAlt+Left"],
+    ["Sayfa ileri (Alt+→)", "LeftAlt+Right"], ["Pencereyi sola yasla", "Super_L+Left"],
+    ["Pencereyi sağa yasla", "Super_L+Right"], ["Ekran görüntüsü", "PrintScreen"],
+    ["Alt+Tab", "LeftAlt+Tab"],
+  ],
+  Windows: [
+    ["Task View", "Super_L+Tab"], ["Sol masaüstü", "Super_L+LeftCtrl+Left"],
+    ["Sağ masaüstü", "Super_L+LeftCtrl+Right"], ["Masaüstünü göster", "Super_L+D"],
+    ["Sayfa geri (Alt+←)", "LeftAlt+Left"], ["Sayfa ileri (Alt+→)", "LeftAlt+Right"],
+  ],
+  Genel: [
+    ["Kopyala", "LeftCtrl+C"], ["Yapıştır", "LeftCtrl+V"], ["Geri al", "LeftCtrl+Z"],
+    ["Yinele", "LeftCtrl+LeftShift+Z"], ["Sekme kapat", "LeftCtrl+W"],
+    ["Kapatılan sekmeyi aç", "LeftCtrl+LeftShift+T"], ["Mouse tuşu 6 (geri)", "Button6"],
+    ["Mouse tuşu 7 (ileri)", "Button7"], ["DPI artır", "DPIUp"], ["DPI azalt", "DPIDown"],
+    ["DPI döngü", "DPICycle"],
+  ],
+};
+const PRESETS = {
+  macOS:   { g4: "LeftCtrl+Up", g5: "LeftCtrl+Left", g6: "LeftCtrl+Down", g7: "LeftCtrl+Right", g9: "Super_L+[" },
+  Linux:   { g4: "Super_L+A", g5: "LeftCtrl+LeftAlt+Left", g6: "Super_L+D", g7: "LeftCtrl+LeftAlt+Right", g9: "LeftAlt+Left" },
+  Windows: { g4: "Super_L+Tab", g5: "Super_L+LeftCtrl+Left", g6: "Super_L+D", g7: "Super_L+LeftCtrl+Right", g9: "LeftAlt+Left" },
+};
+const ROLES = ["macOS", "Linux", "Windows", "Özel"];
+const ROLE_DEFAULT = { F3: "macOS", F4: "Linux", F5: "Windows" };
+
+const $ = (id) => document.getElementById(id);
+let orig = null, draft = null, sel = "F3", selBtn = "g4", roles = { ...ROLE_DEFAULT };
+
+try { roles = { ...roles, ...JSON.parse(localStorage.getItem("g300s-roles") || "{}") }; } catch (e) {}
+function saveRoles() { try { localStorage.setItem("g300s-roles", JSON.stringify(roles)); } catch (e) {} }
+
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const cssColour = (c) => `var(--c-${c})`;
+const norm = (s) => (s || "").toLowerCase();
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElementNS(attrs.ns || "http://www.w3.org/1999/xhtml", tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "ns") continue;
+    if (k === "class") n.setAttribute("class", v);
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids) n.append(c);
+  return n;
+}
+const svg = (tag, attrs = {}, ...kids) => el(tag, { ns: "http://www.w3.org/2000/svg", ...attrs }, ...kids);
+
+function setMsg(text, kind = "") { const m = $("msg"); m.textContent = text; m.className = kind; }
+
+async function api(path, body) {
+  const opt = { headers: { "X-Token": TOKEN } };
+  if (body !== undefined) { opt.method = "POST"; opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+// --- Değişiklik hesabı ---
+function actionLabel(keys) {
+  for (const list of Object.values(ACTIONS)) for (const [l, k] of list) if (norm(k) === norm(keys)) return l;
+  return null;
+}
+function diffs() {
+  const out = [];
+  if (!orig) return out;
+  for (const p of PROFILES) {
+    const a = orig[p], b = draft[p], tag = `${p} (${COLOURS[a.colour]})`;
+    if (a.colour !== b.colour) out.push({ p, text: `${tag}: LED ${COLOURS[a.colour]} → ${COLOURS[b.colour]}` });
+    if (a.rate !== b.rate) out.push({ p, text: `${tag}: polling ${a.rate} → ${b.rate} Hz` });
+    a.dpi.forEach((v, i) => { if (v !== b.dpi[i]) out.push({ p, text: `${tag}: DPI seviye ${i + 1}: ${v} → ${b.dpi[i]}` }); });
+    if (a.default !== b.default) out.push({ p, text: `${tag}: varsayılan seviye ${a.default} → ${b.default}` });
+    for (const g of EDITABLE) if (norm(a.buttons[g]) !== norm(b.buttons[g]))
+      out.push({ p, text: `${tag}: ${BTN_LABEL[g]}: ${a.buttons[g]} → ${b.buttons[g]}` });
+  }
+  return out;
+}
+const btnChanged = (p, g) => orig && norm(orig[p].buttons[g]) !== norm(draft[p].buttons[g]);
+
+// --- Çizim ---
+function render() {
+  renderProfiles(); renderMouse(); renderRows(); renderDpi(); renderChart();
+  const n = diffs().length;
+  $("apply").disabled = n === 0; $("discard").disabled = n === 0;
+  $("apply").textContent = n ? `Mouse'a yaz (${n})` : "Mouse'a yaz";
+  $("colour").value = draft[sel].colour;
+  $("role").value = roles[sel];
+}
+
+function renderProfiles() {
+  const box = $("profiles"); box.replaceChildren();
+  const changedP = new Set(diffs().map((d) => d.p));
+  for (const p of PROFILES) {
+    const d = draft[p];
+    const b = el("button", { class: "pcard", type: "button", "aria-pressed": String(p === sel), onclick: () => { sel = p; render(); } },
+      el("div", { class: "top" }, el("span", { class: "dot", style: `background:${cssColour(d.colour)}` }),
+         `${COLOURS[d.colour]} · ${p}`, el("span", { class: "role" }, roles[p])),
+      el("div", { class: "meta" }, `Varsayılan DPI ${d.dpi[d.default - 1]} · ${d.rate} Hz`));
+    if (live.on && live.mode === p) b.append(el("span", { class: "active" }, "● mouse şu an bu modda"));
+    if (changedP.has(p)) b.append(el("span", { class: "changed", title: "kaydedilmemiş değişiklik" }));
+    box.append(b);
+  }
+}
+
+const POS = { g5: [70, 115], g7: [250, 115], g4: [70, 215], g6: [250, 215], g9: [160, 168] };
+const BODY = "M70 30 Q160 -5 250 30 Q292 100 285 230 Q275 350 160 370 Q45 350 35 230 Q28 100 70 30 Z";
+const live = { on: false, g: new Set(), mouse: new Set(), wheel: 0, move: [0, 0], mode: null, keys: new Set(), side: new Set(), timers: {} };
+function renderMouse() {
+  const s = $("mouse"); s.replaceChildren();
+  const d = draft[sel];
+  s.append(svg("defs", {}, svg("clipPath", { id: "bodyclip" }, svg("path", { d: BODY }))));
+  s.append(svg("path", { class: "body", d: BODY }));
+  s.append(svg("rect", { class: "zone" + (live.mouse.has("Button1") ? " on" : ""), x: 0, y: 0, width: 158, height: 96, "clip-path": "url(#bodyclip)" }));
+  s.append(svg("rect", { class: "zone" + (live.mouse.has("Button2") ? " on" : ""), x: 162, y: 0, width: 160, height: 96, "clip-path": "url(#bodyclip)" }));
+  s.append(svg("line", { x1: 160, y1: 22, x2: 160, y2: 96, stroke: "var(--line)", "stroke-width": 2 }));
+  s.append(svg("line", { x1: 40, y1: 96, x2: 280, y2: 96, stroke: "var(--line)", "stroke-width": 2, "clip-path": "url(#bodyclip)" }));
+  s.append(svg("rect", { class: "wheel" + (live.mouse.has("Button3") || live.wheel ? " on" : ""), x: 148, y: 34, width: 24, height: 46, rx: 11 }));
+  if (live.wheel) s.append(svg("text", { class: "wheelarrow", x: 160, y: live.wheel > 0 ? 28 : 100 }, live.wheel > 0 ? "▲" : "▼"));
+  s.append(svg("text", { class: "fixed", x: 100, y: 68 }, "Sol tık"));
+  s.append(svg("text", { class: "fixed", x: 222, y: 68 }, "Sağ tık"));
+  s.append(svg("g", { class: "gbtn locked" },
+    svg("circle", { cx: 160, cy: 320, r: 30, "stroke-dasharray": "5 4" }),
+    svg("text", { class: "id", x: 160, y: 325, opacity: 0.6 }, "G8"),
+    svg("text", { class: "act", x: 160, y: 368 }, "mod değiştirme")));
+  s.append(svg("circle", { class: "ring", cx: 160, cy: 262, r: 16 }));
+  s.append(svg("circle", { class: "dotm", cx: 160 + live.move[0] * 0.9, cy: 262 + live.move[1] * 0.9, r: 6, opacity: live.on ? 1 : 0.25 }));
+  for (const g of EDITABLE) {
+    const [x, y] = POS[g];
+    const cls = "gbtn" + (g === selBtn ? " sel" : "") + (btnChanged(sel, g) ? " chg" : "") + (live.g.has(g) ? " live" : "");
+    const label = actionLabel(d.buttons[g]) || d.buttons[g];
+    const short = label.length > 15 ? label.slice(0, 14) + "…" : label;
+    s.append(svg("g", { class: cls, tabindex: 0, role: "button", "aria-label": `${BTN_LABEL[g]}: ${label}`,
+      onclick: () => { selBtn = g; render(); }, onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { selBtn = g; render(); } } },
+      svg("circle", { cx: x, cy: y, r: 30 }), svg("text", { class: "id", x, y: y + 5 }, BTN_LABEL[g]),
+      svg("text", { class: "act", x, y: y + 48 }, short)));
+  }
+}
+
+function renderRows() {
+  const box = $("rows"); box.replaceChildren();
+  const d = draft[sel];
+  for (const g of BUTTONS) {
+    const locked = !EDITABLE.includes(g);
+    const cur = d.buttons[g];
+    const row = el("div", { class: "row" + (locked ? " locked" : "") + (g === selBtn ? " sel" : "") + (btnChanged(sel, g) ? " chg" : ""),
+      onclick: () => { if (!locked && selBtn !== g) { selBtn = g; render(); } } });
+    row.append(el("span", { class: "gid" }, BTN_LABEL[g]));
+    if (locked) {
+      row.append(el("span", { class: "keys" }, cur), el("span"));
+    } else {
+      const known = actionLabel(cur);
+      const s = el("select", { "aria-label": `${BTN_LABEL[g]} eylemi` });
+      for (const [grp, list] of Object.entries(ACTIONS)) {
+        const og = el("optgroup", { label: grp });
+        for (const [l, k] of list) og.append(el("option", { value: k }, l));
+        s.append(og);
+      }
+      s.append(el("option", { value: "__custom" }, "Özel…"));
+      s.value = known ? cur : "__custom";
+      // aynı tuş birden fazla grupta olabilir; ilk eşleşen seçilir
+      const txt = el("input", { type: "text", class: "keys", value: cur, "aria-label": `${BTN_LABEL[g]} tuşları`, spellcheck: "false" });
+      s.addEventListener("change", () => {
+        if (s.value !== "__custom") d.buttons[g] = s.value;
+        selBtn = g; render();
+        if (s.value === "__custom") { const t = $("rows").querySelector(".row.sel input"); if (t) { t.focus(); t.select(); } }
+      });
+      txt.addEventListener("change", () => { d.buttons[g] = txt.value.trim().replace(/\s*\+\s*/g, "+"); selBtn = g; render(); });
+      row.append(s, txt);
+    }
+    box.append(row);
+  }
+}
+
+function renderDpi() {
+  const d = draft[sel];
+  const grid = $("dpiGrid"); grid.replaceChildren();
+  d.dpi.forEach((v, i) => {
+    const s = el("select", { "aria-label": `DPI seviye ${i + 1}` });
+    for (const x of DPIS) s.append(el("option", { value: x }, String(x)));
+    s.value = v;
+    s.addEventListener("change", () => setDpi(i, Number(s.value)));
+    const r = el("input", { type: "radio", name: "def", checked: d.default === i + 1 });
+    r.addEventListener("change", () => setDefault(i + 1));
+    grid.append(el("div", { class: "lvl" }, el("label", { class: "f" }, `Seviye ${i + 1}`, s), el("label", { class: "def" }, r, "varsayılan")));
+  });
+  const rs = $("rate"); rs.replaceChildren();
+  for (const r of RATES) rs.append(el("option", { value: r }, `${r} Hz`));
+  rs.value = d.rate;
+}
+const targets = () => ($("syncDpi").checked ? PROFILES : [sel]);
+function setDpi(i, v) { for (const p of targets()) draft[p].dpi[i] = v; render(); }
+function setDefault(n) { for (const p of targets()) draft[p].default = n; render(); }
+
+function renderChart() {
+  const s = $("chart"); s.replaceChildren();
+  const W = 440, H = 240, L = 40, B = 24, T = 10, ph = H - B - T, pw = W - L - 6, max = 4000;
+  for (const v of [0, 1000, 2000, 3000, 4000]) {
+    const y = T + ph - (v / max) * ph;
+    s.append(svg("line", { class: "grid", x1: L, x2: W - 6, y1: y, y2: y }), svg("text", { x: L - 6, y: y + 4, "text-anchor": "end" }, String(v)));
+  }
+  const groupW = pw / 4, barW = Math.min(30, (groupW - 12) / 3);
+  for (let i = 0; i < 4; i++) {
+    const gx = L + i * groupW + groupW / 2;
+    s.append(svg("text", { x: gx, y: H - 6, "text-anchor": "middle" }, `Seviye ${i + 1}`));
+    PROFILES.forEach((p, k) => {
+      const d = draft[p], v = d.dpi[i], h = (v / max) * ph;
+      const x = gx + (k - 1) * (barW + 3) - barW / 2, y = T + ph - h;
+      const isDef = d.default === i + 1;
+      s.append(svg("rect", { x, y, width: barW, height: h, rx: 3, fill: cssColour(d.colour), opacity: isDef ? 1 : 0.45,
+        stroke: isDef ? "var(--ink)" : "none", "stroke-width": 2 }, svg("title", {}, `${p} ${COLOURS[d.colour]} seviye ${i + 1}: ${v} DPI${isDef ? " (varsayılan)" : ""}`)));
+    });
+  }
+  const lg = $("legend"); lg.replaceChildren();
+  for (const p of PROFILES) lg.append(el("span", {}, el("span", { class: "dot", style: `background:${cssColour(draft[p].colour)};width:10px;height:10px` }),
+    `${COLOURS[draft[p].colour]} (${roles[p]}) — varsayılan ${draft[p].dpi[draft[p].default - 1]}`));
+  lg.append(el("span", {}, "Çerçeveli sütun = varsayılan seviye"));
+}
+
+// --- Etkileşim ---
+function fillStatic() {
+  const c = $("colour"); for (const [k, v] of Object.entries(COLOURS)) c.append(el("option", { value: k }, v));
+  const r = $("role"); for (const x of ROLES) r.append(el("option", { value: x }, x));
+}
+$("colour").addEventListener("change", (e) => { draft[sel].colour = e.target.value; render(); });
+$("role").addEventListener("change", (e) => { roles[sel] = e.target.value; saveRoles(); render(); });
+$("rate").addEventListener("change", (e) => { draft[sel].rate = Number(e.target.value); render(); });
+$("syncDpi").addEventListener("change", (e) => {
+  if (e.target.checked) { const d = draft[sel]; for (const p of PROFILES) { draft[p].dpi = [...d.dpi]; draft[p].default = d.default; } }
+  render();
+});
+$("loadPreset").addEventListener("click", () => {
+  const pre = PRESETS[roles[sel]];
+  if (!pre) return setMsg("Bu rol için hazır ayar yok (Özel).", "err");
+  Object.assign(draft[sel].buttons, pre); render();
+  setMsg(`${roles[sel]} hazır ayarı taslağa yüklendi. Mouse'a yazmak için “Mouse'a yaz”.`);
+});
+$("selectMode").addEventListener("click", async () => {
+  try { await api("/api/select", { mode: sel }); setMsg(`Mouse ${sel} moduna geçti.`, "ok"); } catch (e) { setMsg(e.message, "err"); }
+});
+$("discard").addEventListener("click", () => { draft = clone(orig); render(); setMsg("Değişiklikler geri alındı."); });
+$("reload").addEventListener("click", () => load(true));
+
+$("apply").addEventListener("click", () => {
+  const list = $("dlgList"); list.replaceChildren();
+  for (const d of diffs()) list.append(el("li", {}, d.text));
+  $("dlg").showModal();
+});
+$("dlgNo").addEventListener("click", () => $("dlg").close());
+$("dlgYes").addEventListener("click", async () => {
+  $("dlg").close();
+  const changed = [...new Set(diffs().map((d) => d.p))];
+  const profiles = {};
+  for (const p of changed) {
+    const d = draft[p];
+    profiles[p] = { colour: d.colour, rate: d.rate, dpi: d.dpi, default: d.default,
+      buttons: Object.fromEntries(EDITABLE.map((g) => [g, d.buttons[g]])) };
+  }
+  setMsg("Yazılıyor…"); $("apply").disabled = true;
+  try {
+    const r = await api("/api/apply", { profiles });
+    orig = r.state; draft = clone(orig); fillBackups(r.backups); render();
+    setMsg(r.mismatches.length ? "Yazıldı ama fark var: " + r.mismatches.join("; ") : `Yazıldı ve doğrulandı (${changed.join(", ")}). Yedek: ${r.backup}`,
+      r.mismatches.length ? "err" : "ok");
+  } catch (e) { setMsg(e.message, "err"); render(); }
+});
+$("restore").addEventListener("click", async () => {
+  const name = $("backupSel").value;
+  if (!name || !confirm(`${name} yedeği mouse'a yazılsın mı?`)) return;
+  try { const r = await api("/api/restore", { name }); orig = r.state; draft = clone(orig); fillBackups(r.backups); render(); setMsg("Yedek geri yüklendi.", "ok"); }
+  catch (e) { setMsg(e.message, "err"); }
+});
+function fillBackups(list) {
+  const s = $("backupSel"); s.replaceChildren();
+  if (!list.length) s.append(el("option", { value: "" }, "yedek yok"));
+  for (const n of list) s.append(el("option", { value: n }, n.replace(".json", "")));
+  $("restore").disabled = !list.length;
+}
+async function load(manual) {
+  setMsg("Mouse okunuyor…");
+  try {
+    const r = await api("/api/state");
+    orig = r.state; draft = clone(orig); fillBackups(r.backups);
+    $("conn").textContent = "G300s bağlı"; $("conn").className = "pill ok";
+    render(); setMsg(manual ? "Mouse'tan yeniden okundu." : "Hazır.");
+  } catch (e) {
+    $("conn").textContent = "mouse okunamadı"; $("conn").className = "pill bad";
+    setMsg(e.message, "err");
+  }
+}
+
+// --- Canlı buton testi ---
+let liveAbort = null;
+const setEq = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+const gName = (g) => BTN_LABEL[g];
+function logEv(text) {
+  const ul = $("evlog"); ul.prepend(el("li", {}, text));
+  while (ul.children.length > 6) ul.lastChild.remove();
+}
+function liveInfo(html, warn) { const b = $("liveBox"); b.replaceChildren(...html); b.classList.toggle("warn", !!warn); }
+function flash(key, ms, fn) { clearTimeout(live.timers[key]); live.timers[key] = setTimeout(fn, ms); }
+
+function evalChord(isDown) {
+  const chord = new Set([...live.keys, ...live.side]);
+  live.g = new Set();
+  if (!chord.size) { renderMouse(); return; }
+  const hits = [];
+  for (const p of PROFILES) for (const g of EDITABLE)
+    if (setEq(new Set(orig[p].buttons[g].split("+")), chord)) hits.push([p, g]);
+  const name = [...chord].join("+");
+  if (!hits.length) {
+    if (isDown) { liveInfo([`Tanımsız kombinasyon: `, el("b", {}, name), ` — hiçbir profilde bu kombinasyonu veren buton yok.`], true); logEv(`? ${name}`); }
+    renderMouse(); return;
+  }
+  const profs = [...new Set(hits.map((h) => h[0]))];
+  const mine = hits.filter((h) => h[0] === sel);
+  if (profs.length === 1 && live.mode !== profs[0]) { live.mode = profs[0]; }
+  if (!mine.length && profs.length === 1) { sel = profs[0]; render(); }
+  for (const [p, g] of hits) if (p === sel) live.g.add(g);
+  if (isDown) {
+    const pick = hits.filter((h) => h[0] === sel);
+    const use = pick.length ? pick : hits;
+    const txt = use.map(([p, g]) => `${gName(g)} → ${actionLabel(orig[p].buttons[g]) || orig[p].buttons[g]}`).join(", ");
+    const modeTxt = profs.length === 1 ? ` · mod: ${COLOURS[orig[profs[0]].colour]} (${profs[0]})` : ` · birden fazla profilde aynı (${profs.join(", ")})`;
+    liveInfo([el("b", {}, txt), `  (${name})${modeTxt}`]);
+    logEv(`${use.map(([, g]) => gName(g)).join("/")} ${name}`);
+  }
+  renderProfiles(); renderMouse();
+}
+
+function onLive(m) {
+  if (m.error) { liveInfo([m.error], true); stopLive(); return; }
+  if (m.hello) {
+    liveInfo([`Dinleniyor. ${m.grabbed.length ? "Makro tuşları OS'a iletilmiyor." : "Makrolar OS'a da iletiliyor."} Butonlara bas.`, ` (Sol/sağ/orta tık, tekerlek ve hareket de gösterilir; G8 ve DPI tuşları bilgisayara olay göndermez.)`]);
+    return;
+  }
+  if (m.move) {
+    const [dx, dy] = m.move, k = Math.min(14 / Math.max(Math.hypot(dx, dy), 1), 1);
+    live.move = [dx * k, dy * k]; renderMouse();
+    flash("move", 120, () => { live.move = [0, 0]; renderMouse(); });
+    return;
+  }
+  let keysChanged = false, mouseChanged = false;
+  for (const [name, val] of m.keys || []) { keysChanged = true; val ? live.keys.add(name) : live.keys.delete(name); }
+  for (const [name, evname, val] of m.btns || []) {
+    if (["Button1", "Button2", "Button3"].includes(name)) {
+      mouseChanged = true; val ? live.mouse.add(name) : live.mouse.delete(name);
+      if (val) logEv(`${{ Button1: "Sol tık", Button2: "Sağ tık", Button3: "Orta tık" }[name]} (${evname})`);
+    } else { keysChanged = true; val ? live.side.add(name) : live.side.delete(name); }
+  }
+  if (m.wheel) {
+    live.wheel = m.wheel > 0 ? 1 : -1; mouseChanged = true; logEv(`Tekerlek ${m.wheel > 0 ? "yukarı" : "aşağı"}`);
+    flash("wheel", 180, () => { live.wheel = 0; renderMouse(); });
+  }
+  if (keysChanged) evalChord((m.keys || []).some((k) => k[1] === 1) || (m.btns || []).some((b) => b[2] === 1 && !["Button1", "Button2", "Button3"].includes(b[0])));
+  else if (mouseChanged) renderMouse();
+}
+
+async function startLive() {
+  if (diffs().length && !confirm("Kaydedilmemiş taslak var. Canlı test mouse'un GERÇEK ayarını (taslağı değil) esas alır. Devam?")) return;
+  live.on = true; live.keys.clear(); live.side.clear(); live.mouse.clear(); live.g.clear();
+  $("liveBtn").textContent = "■ Testi durdur";
+  liveInfo(["Bağlanıyor…"]); renderMouse();
+  liveAbort = new AbortController();
+  try {
+    const r = await fetch("/api/events" + ($("grabKeys").checked ? "?grab=1" : ""), { headers: { "X-Token": TOKEN }, signal: liveAbort.signal });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        if (chunk.startsWith("data: ")) { try { onLive(JSON.parse(chunk.slice(6))); } catch (e) {} }
+      }
+    }
+  } catch (e) { if (e.name !== "AbortError") liveInfo([e.message], true); }
+  stopLive(true);
+}
+function stopLive(fromStream) {
+  if (liveAbort) { try { liveAbort.abort(); } catch (e) {} liveAbort = null; }
+  if (!live.on && fromStream) return;
+  live.on = false; live.keys.clear(); live.side.clear(); live.mouse.clear(); live.g.clear(); live.wheel = 0; live.move = [0, 0]; live.mode = null;
+  $("liveBtn").textContent = "▶ Canlı test";
+  renderProfiles(); renderMouse();
+}
+$("liveBtn").addEventListener("click", () => (live.on ? stopLive() : startLive()));
+$("grabKeys").addEventListener("change", () => { if (live.on) { stopLive(); startLive(); } });
+
+window.addEventListener("beforeunload", (e) => { if (diffs().length) { e.preventDefault(); e.returnValue = ""; } });
+fillStatic(); load(false);
+</script>
+</body>
+</html>
